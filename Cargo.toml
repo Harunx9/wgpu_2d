@@ -1,0 +1,21 @@
+[package]
+name = "wgpu_2d"
+version = "0.1.0"
+authors = ["Szymon Wanot <szwanot@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+wgpu = "0.7.1"
+winit = "0.24.0"
+nalgebra = { version = "0.25.4", features = ["convert-bytemuck"] }
+bytemuck = { version = "1.5.1", features = ["derive"] }
+shaderc = "0.7.0"
+lodepng = "3.4.5"
+rgb = "0.8.*"
+nalgebra-glm = "0.11.0"
+env_logger = "0.8.*"
+futures = "0.3.14"
+lazy_static = "1.4.0"
+log = "0.4.0"
