@@ -19,6 +19,7 @@ use winit::{
 };
 
 lazy_static! {
+    //GL COORDS
     static ref VERTICES: [Vertex; 4] = [
         Vertex {
             pos: glm::vec2(0.25, 0.25),
@@ -37,6 +38,7 @@ lazy_static! {
             color: glm::vec4(0.3, 0.5, 0.6, 1.0),
         },
     ];
+    //WINDOW COORDS
     static ref VERTICES2: [Vertex; 4] = [
         Vertex {
             pos: glm::vec2(25., 25.),
@@ -56,7 +58,7 @@ lazy_static! {
         },
     ];
     static ref INDICIES: [u16; 6] = [0, 1, 2, 2, 1, 3];
-
+    // CORRECTION MATRIX
     #[rustfmt::skip]
     pub static ref OPENGL_TO_WGPU_MATRIX: glm::Mat4 =
         glm::mat4(
@@ -75,16 +77,7 @@ pub struct Uniform {
 impl Uniform {
     pub fn new() -> Self {
         Uniform {
-            view_model: //glm::identity()
-            (*OPENGL_TO_WGPU_MATRIX)
-               * glm::ortho(0.0, 1280., 720., 0., -1., 1.)
-                //* glm::look_at(
-                 //   &glm::vec3(0., 1., 2.),
-                  //  &glm::vec3(0., 0., 0.),
-                   // &glm::vec3(0., 0., 1.),
-                //),
-                //  * glm::ortho(0.0, 1280., 720., 0., 0.01, 100.),  
-                //* glm::scale(&glm::identity(), &glm::vec3(1., 1., 1.)),
+            view_model: (*OPENGL_TO_WGPU_MATRIX) * glm::ortho(0.0, 1280., 720., 0., -1., 1.),
         }
     }
 }
