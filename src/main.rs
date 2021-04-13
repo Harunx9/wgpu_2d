@@ -57,7 +57,7 @@ lazy_static! {
             color: glm::vec4(0.3, 0.5, 0.6, 1.0),
         },
     ];
-    static ref INDICIES: [u16; 6] = [0, 1, 2, 2, 1, 3];
+    static ref INDICIES: [u16; 6] = [0, 2, 1, 2, 3, 1];
     // CORRECTION MATRIX
     #[rustfmt::skip]
     pub static ref OPENGL_TO_WGPU_MATRIX: glm::Mat4 =
