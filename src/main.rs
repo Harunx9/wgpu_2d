@@ -57,6 +57,30 @@ lazy_static! {
             color: glm::vec4(0.3, 0.5, 0.6, 1.0),
         },
     ];
+
+    static ref VERTICES_TEX: [TexVertex; 4] = [
+        TexVertex {
+            pos: glm::vec2(25., 25.),
+            tex_coords: glm::vec2(0.,0.),
+            color: glm::vec4(0.3, 0.5, 0.8, 1.0),
+        },
+        TexVertex {
+            pos: glm::vec2(750., 25.),
+            tex_coords: glm::vec2(1.,0.),
+            color: glm::vec4(0.3, 0.3, 0.4, 1.0),
+        },
+        TexVertex {
+            pos: glm::vec2(25., 750.),
+            tex_coords: glm::vec2(0.,1.),
+            color: glm::vec4(0.6, 0.1, 0.8, 1.0),
+        },
+        TexVertex {
+            pos: glm::vec2(750., 750.),
+            tex_coords: glm::vec2(1.,1.),
+            color: glm::vec4(0.3, 0.5, 0.6, 1.0),
+        },
+    ];
+
     static ref INDICIES: [u16; 6] = [0, 2, 1, 2, 3, 1];
     // CORRECTION MATRIX
     #[rustfmt::skip]
@@ -110,6 +134,40 @@ impl Vertex {
     }
 }
 
+#[repr(C)]
+#[derive(Clone, Copy, Debug, bytemuck::Zeroable, bytemuck::Pod)]
+pub struct TexVertex {
+    pub pos: glm::Vec2,
+    pub tex_coords: glm::Vec2,
+    pub color: glm::Vec4,
+}
+
+impl TexVertex {
+    fn impl_vertex<'a>() -> wgpu::VertexBufferLayout<'a> {
+        wgpu::VertexBufferLayout {
+            array_stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress,
+            step_mode: wgpu::InputStepMode::Vertex,
+            attributes: &[
+                wgpu::VertexAttribute {
+                    offset: 0,
+                    shader_location: 0,
+                    format: wgpu::VertexFormat::Float2,
+                },
+                wgpu::VertexAttribute {
+                    offset: std::mem::size_of::<glm::Vec2>() as wgpu::BufferAddress,
+                    shader_location: 0,
+                    format: wgpu::VertexFormat::Float2,
+                },
+                wgpu::VertexAttribute {
+                    offset: std::mem::size_of::<glm::Vec4>() as wgpu::BufferAddress,
+                    shader_location: 1,
+                    format: wgpu::VertexFormat::Float4,
+                },
+            ],
+        }
+    }
+}
+
 pub struct GpuState {
     instance: wgpu::Instance,
     surface: wgpu::Surface,
@@ -125,6 +183,9 @@ pub struct GpuState {
     uniform_buffer: wgpu::Buffer,
     shader: Shader,
     uniform_bind_group: wgpu::BindGroup,
+    tex_bind_group: wgpu::BindGroup,
+    sampler: wgpu::Sampler,
+    texture: Texture,
     uniform_bind_group_layout: wgpu::BindGroupLayout,
 }
 
@@ -165,7 +226,7 @@ impl GpuState {
 
         let swap_chain = device.create_swap_chain(&surface, &swap_chain_desc);
 
-        let shader = Shader::new(&device, "src/fragment.glsl", "src/vertex.glsl");
+        let shader = Shader::new(&device, "src/tex_fragment.glsl", "src/tex_vertex.glsl");
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: None,
             contents: bytemuck::cast_slice(&*VERTICES2),
@@ -178,11 +239,25 @@ impl GpuState {
             usage: wgpu::BufferUsage::INDEX,
         });
 
+        let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            ..Default::default()
+        });
+
+        let texture = Texture::new(
+            &device,
+            &queue,
+            &lodepng::decode32_file("src/test_rect.png").unwrap(),
+            wgpu::TextureFormat::Rgba8UnormSrgb,
+            wgpu::TextureDimension::D2,
+            wgpu::TextureUsage::SAMPLED | wgpu::TextureUsage::COPY_DST,
+        );
+
         let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: None,
             contents: bytemuck::cast_slice(&[Uniform::new()]),
             usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_SRC,
         });
+
         let uniform_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 label: Some("Global uniform bind group layout"),
@@ -220,7 +295,7 @@ impl GpuState {
             vertex: wgpu::VertexState {
                 module: &shader.vs_module,
                 entry_point: "main",
-                buffers: &[Vertex::impl_vertex()],
+                buffers: &[TexVertex::impl_vertex()],
             },
             fragment: Some(wgpu::FragmentState {
                 module: &shader.fs_module,
